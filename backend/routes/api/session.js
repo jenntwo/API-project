@@ -1,6 +1,8 @@
 const express = require('express')
 const { Op } = require('sequelize');
 const bcrypt = require('bcryptjs');
+const { validationResult } = require('express-validator');
+
 
 const { setTokenCookie, restoreUser } = require('../../utils/auth');
 const { User } = require('../../db/models');
@@ -13,28 +15,12 @@ const validateLogin = [
     check('credential')
       .exists({ checkFalsy: true })
       .notEmpty()
-      .withMessage('Please provide a valid email or username.'),
+      .withMessage("Email or username is required"),
     check('password')
       .exists({ checkFalsy: true })
-      .withMessage('Please provide a password.'),
-      check('email')
-      .exists({ checkFalsy: true })
-      .isEmail()
-      .withMessage('Please provide a valid email address.'),
-    check('firstName')
-      .exists({ checkFalsy: true })
-      .isString()
-      .withMessage('First name must be a string.'),
-    check('lastName')
-      .exists({ checkFalsy: true })
-      .isString()
-      .withMessage('Last name must be a string.'),
-      handleValidationErrors
-    ];
-
-
-
-
+      .notEmpty()
+      .withMessage("Password is required")
+];
 
 
 
@@ -43,6 +29,21 @@ router.post(
     '/',
     validateLogin,
     async (req, res, next) => {
+      //add the 400 status code when the password/credential are not valid
+      const errors = validationResult(req);
+
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          message: 'Bad Request',
+          errors: errors.array().reduce((acc, error) => {
+            acc[error.param] = error.msg;
+            return acc;
+          }, {}),
+        });
+      }
+
+
+
       const { credential, password } = req.body;
 
       const user = await User.unscoped().findOne({
@@ -57,7 +58,7 @@ router.post(
         const err = new Error('Login failed');
         err.status = 401;
         err.title = 'Login failed';
-        err.errors = { credential: 'The provided credentials were invalid.' };
+        err.errors = { credential: "Invalid credentials" };
         return next(err);
       }
 
@@ -98,7 +99,7 @@ router.get(
           email: user.email,
           username: user.username,
           firstName: user.firstName,
-          lastName: user.lastName, 
+          lastName: user.lastName,
         };
         return res.json({
           user: safeUser
