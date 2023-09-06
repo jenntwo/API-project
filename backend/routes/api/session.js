@@ -8,6 +8,7 @@ const { User } = require('../../db/models');
 const router = express.Router();
 const { check } = require('express-validator');
 const { handleValidationErrors } = require('../../utils/validation');
+
 const validateLogin = [
     check('credential')
       .exists({ checkFalsy: true })
@@ -16,8 +17,25 @@ const validateLogin = [
     check('password')
       .exists({ checkFalsy: true })
       .withMessage('Please provide a password.'),
-    handleValidationErrors
-  ];
+      check('email')
+      .exists({ checkFalsy: true })
+      .isEmail()
+      .withMessage('Please provide a valid email address.'),
+    check('firstName')
+      .exists({ checkFalsy: true })
+      .isString()
+      .withMessage('First name must be a string.'),
+    check('lastName')
+      .exists({ checkFalsy: true })
+      .isString()
+      .withMessage('Last name must be a string.'),
+      handleValidationErrors
+    ];
+
+
+
+
+
 
 
 // Log in
@@ -47,8 +65,8 @@ router.post(
         id: user.id,
         email: user.email,
         username: user.username,
-        firstName: user.firstName, // Include firstName in the response
-        lastName: user.lastName,   // Include lastName in the response
+        firstName: user.firstName,
+        lastName: user.lastName,
       };
 
       await setTokenCookie(res, safeUser);
@@ -79,8 +97,8 @@ router.get(
           id: user.id,
           email: user.email,
           username: user.username,
-          firstName: user.firstName, // Include firstName in the response
-          lastName: user.lastName,   // Include lastName in the response
+          firstName: user.firstName,
+          lastName: user.lastName, 
         };
         return res.json({
           user: safeUser
