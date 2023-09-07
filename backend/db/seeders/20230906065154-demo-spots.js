@@ -5,7 +5,7 @@ module.exports = {
   up:async (queryInterface, Sequelize)=> {
     return queryInterface.bulkInsert('Spots',[
       {
-        ownerId: 1,
+        ownerId: 14,
         address: '123 Main St',
         city: 'Exampleville',
         state: 'CA',
@@ -17,7 +17,7 @@ module.exports = {
         price: 100.00
       },
       {
-        ownerId: 1,
+        ownerId: 14,
         address: '456 Elm St',
         city: 'Sampletown',
         state: 'NY',
@@ -29,7 +29,7 @@ module.exports = {
         price: 150.00
       },
       {
-        ownerId: 2,
+        ownerId: 13,
         address: '789 Oak St',
         city: 'Testville',
         state: 'TX',
@@ -41,7 +41,7 @@ module.exports = {
         price: 200.00
       },
       {
-        ownerId: 2,
+        ownerId: 12,
         address: '101 Pine St',
         city: 'Demo City',
         state: 'FL',
@@ -53,7 +53,7 @@ module.exports = {
         price: 300.00
       },
       {
-        ownerId: 3,
+        ownerId: 14,
         address: '321 Cedar St',
         city: 'Modeltown',
         state: 'CA',
@@ -65,7 +65,7 @@ module.exports = {
         price: 75.00
       },
       {
-        ownerId: 3,
+        ownerId: 15,
         address: '555 Birch St',
         city: 'Testington',
         state: 'IL',
@@ -77,7 +77,7 @@ module.exports = {
         price: 180.00
       },
       {
-        ownerId: 3,
+        ownerId: 15,
         address: '222 Maple St',
         city: 'Sampleville',
         state: 'WA',
@@ -103,7 +103,7 @@ module.exports = {
    down: async (queryInterface, Sequelize)=> {
     const Op = Sequelize.Op;
     return queryInterface.bulkDelete('Spots',{
-      ownerId:{[Op.in]:[1,2,3]}
+      ownerId:{[Op.in]:[1,2,3,4]}
     },{});
     /**
      * Add commands to revert seed here.
