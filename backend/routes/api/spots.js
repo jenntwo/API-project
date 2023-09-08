@@ -1,7 +1,7 @@
 const express = require('express');
 const { Op } = require('sequelize');
 const { check, query } = require('express-validator');
-const { requireAuth } = require('../../utils/auth');
+const { requireAuth,requireProperAuth } = require('../../utils/auth');
 const { validationResult } = require('express-validator');
 
 const { Spot, Review, SpotImage, User, sequelize, ReviewImage, Booking } = require('../../db/models');
@@ -109,6 +109,28 @@ async function getSpots(req,res){
     return formattedSpots;
 }
 
+
+//Middleware for check proper authorization of current user
+async function isSpotOwner(req, res, next){
+    const spot = await Spot.findByPk(req.params.spotId);
+
+    //Couldn't find a Spot with the id
+    if (!spot) {
+        return res.status(404).json({
+            "message": "Spot couldn't be found",
+            "statusCode": 404
+        })
+    }
+
+    req.spot = spot;
+    if(req.user.id === req.spot.ownerId) {
+        return next();
+    }else{
+        requireProperAuth(res);
+    }
+}
+
+
 // const validateSpotQuery = [
     //     query('page')
     //         .optional()
@@ -205,7 +227,6 @@ router.get('/:spotId',async(req,res)=>{
 
 
 //*Create a Spot
-
 router.post('/', requireAuth, validateSpot, async(req,res)=>{
     const {
         address,
@@ -232,33 +253,36 @@ router.post('/', requireAuth, validateSpot, async(req,res)=>{
      });
       res.status(201).json(newSpot)
 });
+//* Create a Spot
 
-// //Add an Image to a Spot based on the Spot's id
 
-// // Middleware to check if a spot belongs to the current user
-// function isSpotOwner(req, res, next) {
-//     // Check if the spot with spotId belongs to the current user
-//     const spotId = parseInt(req.params.spotId);
-//     const spot = spots.find((spot) => spot.id === spotId);
 
-//     if (!spot){
-//       return res.status(404).json({ message: "Spot couldn't be found" });
-//     }else if(spot.ownerId !== currentUserId) {
-//       return res.status(403).json({message:"Spot must belong to the current user"})
-//   }
-//   next();
-// }
 
-// router.post('/:spotId/images',validateSpot,isSpotOwner,(req,res)=>{
-//     const newImage = {
-//         id: spotImages.length + 1,
-//         spotId: spotId,
-//         ownerId: req.user.id,
-//         ...req.body,
-//       };
-//       spotImages.push(newImage);
-//       res.status(200).json(newImage);
-// });
+//* Add an Image to a Spot based on the Spot's id
+router.post('/:spotId/images',requireAuth, isSpotOwner, async(req,res)=>{
+    const { url, preview } = req.body;
+    const spot = req.spot;
+
+    // If couldn't find a Spot with id
+    if (!spot){
+        return res.status(404).json({ message: "Spot couldn't be found" });
+    }
+
+    const newImage = await SpotImage.create({
+        spotId:spot.id,
+        url,
+        preview
+    });
+
+    const newImageRes = {
+        id: newImage.id,
+        url:newImage.url,
+        preview:newImage.preview
+      };
+    res.status(200).json(newImageRes);
+});
+//* Add an Image to a Spot based on the Spot's id
+
 
 
 // // edit a spot
