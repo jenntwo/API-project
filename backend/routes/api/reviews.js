@@ -1,19 +1,10 @@
 const express = require('express');
-const { requireAuth,requireProperAut,successfulDeleteRes } = require('../../utils/auth');
+const { requireAuth,successfulDeleteRes } = require('../../utils/auth');
 const { Spot, Review, SpotImage, User, sequelize, ReviewImage, Booking } = require('../../db/models');
 const { validationResult } = require('express-validator');
 const router = express.Router();
 const { check, query } = require('express-validator');
-//Review Validation Check
 
-const validateReview = [
-    check('review')
-        .exists({ checkFalsy: true })
-        .withMessage('Review text is required'),
-    check('stars')
-        .isIn([1, 2, 3, 4, 5])
-        .withMessage('Stars must be an integer from 1 to 5')
-];
 
 
 //Find Review middleware

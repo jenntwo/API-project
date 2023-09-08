@@ -42,6 +42,16 @@ const router = express.Router();
             .withMessage('Price is required')
     ];
 
+//Review Validation Check
+const validateReview = [
+    check('review')
+        .exists({ checkFalsy: true })
+        .withMessage('Review text is required'),
+    check('stars')
+        .isIn([1, 2, 3, 4, 5])
+        .withMessage('Stars must be an integer from 1 to 5')
+];
+
 
 //middleware for getting new json Spot info
 async function getSpots(req,res){
@@ -375,5 +385,26 @@ router.get('/:spotId/reviews', isSpotOwner, async (req, res) => {
     res.json({ Reviews: formatedReviews });
 });
 // * Get all Reviews by a Spot's id
+
+
+// * Create a Review for a Spot based on the Spot's id
+router.post('/:spotId/reviews', requireAuth, isSpotOwner, validateReview, async (req, res) => {
+    const IsReviewed = await Review.findOne({ where: { userId: req.user.id, spotId: req.params.spotId } });
+    if (IsReviewed) {
+        return res.status(500).json({
+            "message": "User already has a review for this spot",
+            "statusCode": 500
+        })
+    }
+        const { review, stars } = req.body;
+        const record = await Review.create({
+            userId: req.user.id,
+            spotId: req.params.spotId,
+            review,
+            stars });
+        res.status(201).json(record);
+    })
+// * Create a Review for a Spot based on the Spot's id
+
 
 module.exports = router;
