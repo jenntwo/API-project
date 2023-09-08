@@ -2,6 +2,7 @@ const express = require('express');
 const { Op } = require('sequelize');
 const { check, query } = require('express-validator');
 const { requireAuth } = require('../../utils/auth');
+const { validationResult } = require('express-validator');
 
 const { Spot, Review, SpotImage, User, sequelize, ReviewImage, Booking } = require('../../db/models');
 
@@ -119,11 +120,15 @@ async function getSpots(req,res){
     //         .withMessage("Size must be a positive integer"),
     // ];
 
+
+
 //* Get all Spots
 router.get('/', async (req, res) => {
     res.json({Spots:await getSpots(req, res)});
 });
 //* Get all Spots
+
+
 
 
 //* Get Spots owned by the Current User
@@ -133,6 +138,8 @@ router.get('/current',requireAuth, async(req,res)=>{
     res.json({ Spots: userSpotsArr });
 });
 //* Get Spots owned by the Current User
+
+
 
 
 //* Get detailed of a Spot from an id
@@ -193,21 +200,38 @@ router.get('/:spotId',async(req,res)=>{
         res.status(200).json(spotByPkRes);
       }
 });
+//* Get detailed of a Spot from an id
 
-// //Create a Spot
-// router.post('/', requireAuth, validateSpot, async(req,res)=>{
-//     // Authentciation the user
-//      // Validate the request body
-//      //Create new spot
-//      const newSpot = {
-//         id: spots.length + 1,
-//         ownerId: req.user.id,
-//         ...req.body,
-//       };
 
-//       spot.push(newSpot);
-//       res.status(201).json(newSpot)
-// });
+
+//*Create a Spot
+
+router.post('/', requireAuth, validateSpot, async(req,res)=>{
+    const {
+        address,
+        city,
+        state,
+        country,
+        lat,
+        lng,
+        name,
+        description,
+        price
+    } = req.body;
+
+    // Validate the request body
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+
+     const newSpot = await Spot.create({
+        ownerId: req.user.id,
+        ...req.body
+     });
+      res.status(201).json(newSpot)
+});
 
 // //Add an Image to a Spot based on the Spot's id
 
