@@ -1,7 +1,7 @@
 const express = require('express');
 const { Op } = require('sequelize');
 const { check, query } = require('express-validator');
-const { requireAuth,requireProperAuth } = require('../../utils/auth');
+const { requireAuth,requireProperAuth,successfulDeleteRes } = require('../../utils/auth');
 const { validationResult } = require('express-validator');
 
 const { Spot, Review, SpotImage, User, sequelize, ReviewImage, Booking } = require('../../db/models');
@@ -323,13 +323,12 @@ router.put(
 
 
 
-// // delete a spot
-// router.delete('/:spotId', isSpotOwner, (req, res) => {
-
-//     //delete db
-//     spots.splice(spotIndex, 1);
-//     res.status(200).json({ message: "Successfully deleted" });
-//   });
+//* Delete a spot
+router.delete('/:spotId', requireAuth,isSpotOwner,successfulDeleteRes, async(req, res) => {
+    const spot = req.spot;
+    await req.spot.destroy();
+    successfulDeleteRes(res);
+  });
 
 
 module.exports = router;
