@@ -1,11 +1,17 @@
 'use strict';
 
-/** @type {import('sequelize-cli').Migration} */
+const { Spot } = require('../models');
+const bcrypt = require("bcryptjs");
+
+let options = {};
+if (process.env.NODE_ENV === 'production') {
+  options.schema = process.env.SCHEMA;  // define your schema in options object
+}
 module.exports = {
-  up:async (queryInterface, Sequelize)=> {
-    return queryInterface.bulkInsert('Spots',[
+  async up (queryInterface, Sequelize) {
+    await Spot.bulkCreate([
       {
-        ownerId: 14,
+        ownerId: 1,
         address: '123 Main St',
         city: 'Exampleville',
         state: 'CA',
@@ -17,7 +23,7 @@ module.exports = {
         price: 100.00
       },
       {
-        ownerId: 14,
+        ownerId: 1,
         address: '456 Elm St',
         city: 'Sampletown',
         state: 'NY',
@@ -29,7 +35,7 @@ module.exports = {
         price: 150.00
       },
       {
-        ownerId: 13,
+        ownerId: 2,
         address: '789 Oak St',
         city: 'Testville',
         state: 'TX',
@@ -41,7 +47,7 @@ module.exports = {
         price: 200.00
       },
       {
-        ownerId: 12,
+        ownerId: 2,
         address: '101 Pine St',
         city: 'Demo City',
         state: 'FL',
@@ -53,7 +59,7 @@ module.exports = {
         price: 300.00
       },
       {
-        ownerId: 14,
+        ownerId: 3,
         address: '321 Cedar St',
         city: 'Modeltown',
         state: 'CA',
@@ -65,7 +71,7 @@ module.exports = {
         price: 75.00
       },
       {
-        ownerId: 15,
+        ownerId: 3,
         address: '555 Birch St',
         city: 'Testington',
         state: 'IL',
@@ -77,7 +83,7 @@ module.exports = {
         price: 180.00
       },
       {
-        ownerId: 15,
+        ownerId: 3,
         address: '222 Maple St',
         city: 'Sampleville',
         state: 'WA',
@@ -100,9 +106,10 @@ module.exports = {
     */
   },
 
-   down: async (queryInterface, Sequelize)=> {
+  async down (queryInterface, Sequelize) {
+    options.tableName = 'Spots';
     const Op = Sequelize.Op;
-    return queryInterface.bulkDelete('Spots',{
+    return queryInterface.bulkDelete(options, {
       ownerId:{[Op.in]:[1,2,3,4]}
     },{});
     /**

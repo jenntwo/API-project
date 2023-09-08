@@ -1,11 +1,16 @@
 'use strict';
 
 const { sequelize } = require('../models');
+const { ReviewImage } = require('../models');
+const bcrypt = require("bcryptjs");
 
-/** @type {import('sequelize-cli').Migration} */
+let options = {};
+if (process.env.NODE_ENV === 'production') {
+  options.schema = process.env.SCHEMA;  // define your schema in options object
+}
 module.exports = {
-  up:async (queryInterface, Sequelize) =>{
-    await queryInterface.bulkInsert('ReviewImages',[
+  async up (queryInterface, Sequelize) {
+    await ReviewImage.bulkCreate([
       {
         reviewId:1,
         url:'review-1-Image.com'
@@ -25,9 +30,10 @@ module.exports = {
     ],{})
   },
 
-  down:async (queryInterface, Sequelize)=>{
+  async down (queryInterface, Sequelize) {
+    options.tableName = 'ReviewImages';
     const Op = Sequelize.Op;
-    return queryInterface.bulkDelete('ReviewImages',{
+    return queryInterface.bulkDelete(options, {
       reviewId:{[Op.in]:[1, 2, 3]}
     },{})
     /**

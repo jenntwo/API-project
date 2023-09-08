@@ -132,19 +132,67 @@ router.get('/current',requireAuth, async(req,res)=>{
     const userSpotsArr = allSpotArr.filter(spot => spot.ownerId === req.user.id)
     res.json({ Spots: userSpotsArr });
 });
+//* Get Spots owned by the Current User
 
 
-// //Get detailed of a Spot from an id
-// router.get('/:spotId',(req,res)=>{
-//     const spotId = parseInt(req.params.spotId);
-//     const spot = spots.find((spot) => spot.id === spotId);
+//* Get detailed of a Spot from an id
+router.get('/:spotId',async(req,res)=>{
+    const op = {
+        include:[
+            {
+                model:SpotImage,
+                attributes: ['id', 'url', 'preview']
+            },
+            {
+                model:User,
+                attributes: ['id', 'firstName', 'lastName']
+            },
+            {
+                model:Review
+            }
+        ]
+    };
 
-//     if (spot) {
-//         res.status(200).json(spot);
-//       } else {
-//         res.status(404).json({ message: "Spot couldn't be found" });
-//       }
-// });
+    let spot = await Spot.findByPk(req.params.spotId, op);
+    //Error response: Couldn't find a Spot with the specified id
+    if (!spot) {
+        res.status(404).json({ message: "Spot couldn't be found" });
+      } else {
+
+        spot.numReviews = spot.Reviews.length;
+        // console.log(spot.numReviews);
+        if (spot.Reviews.length) {
+            const spotReview = spot.Review
+            const sum = spot.Reviews.reduce((acc, spotReview) => acc + spotReview.stars, 0);
+            // console.log(sum);
+            spot.avgStarRating = (sum / (spot.Reviews.length)).toFixed(1);//round tp decimal
+          } else {
+            spot.avgStarRating = null;
+       }
+
+       const spotByPkRes = {
+            id: spot.id,
+            ownerId: spot.ownerId,
+            address: spot.address,
+            city: spot.city,
+            state: spot.state,
+            country: spot.country,
+            lat: spot.lat,
+            lng: spot.lng,
+            name: spot.name,
+            description: spot.description,
+            price: spot.price,
+            createdAt: spot.createdAt,
+            updatedAt: spot.updatedAt,
+            numReviews:spot.numReviews,
+            avgRating:spot.avgStarRating,
+            SpotImages:spot.SpotImages,
+            owner:spot.User
+       };
+
+        res.status(200).json(spotByPkRes);
+      }
+});
 
 // //Create a Spot
 // router.post('/', requireAuth, validateSpot, async(req,res)=>{
