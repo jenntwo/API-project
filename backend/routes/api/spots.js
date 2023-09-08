@@ -182,11 +182,7 @@ router.get('/:spotId',async(req,res)=>{
         ]
     };
 
-    let spot = await Spot.findByPk(req.params.spotId, op);
-    //Error response: Couldn't find a Spot with the specified id
-    if (!spot) {
-        res.status(404).json({ message: "Spot couldn't be found" });
-      } else {
+    try{ let spot = await Spot.findByPk(req.params.spotId, op);
 
         spot.numReviews = spot.Reviews.length;
         // console.log(spot.numReviews);
@@ -218,10 +214,15 @@ router.get('/:spotId',async(req,res)=>{
             SpotImages:spot.SpotImages,
             owner:spot.User
        };
-
-        res.status(200).json(spotByPkRes);
+       res.status(200).json(spotByPkRes);
+    }
+    //Error response: Couldn't find a Spot with the specified id
+    catch (error) {
+        res.status(404).json({ message: "Spot couldn't be found" });
       }
-});
+    });
+
+
 //* Get detailed of a Spot from an id
 
 

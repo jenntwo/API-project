@@ -1,13 +1,30 @@
 const express = require('express');
-const { requireAuth } = require('../../utils/auth');
-const { Review, Spot, User, SpotImage, sequelize, ReviewImage } = require('../../db/models');
-
+const { requireAuth,requireProperAut,successfulDeleteRes } = require('../../utils/auth');
+const { Spot, Review, SpotImage, User, sequelize, ReviewImage, Booking } = require('../../db/models');
+const { validationResult } = require('express-validator');
 const router = express.Router();
 
 
-//Get all Reviews of the Current User
-router.get('/current', requireAuth, async (req, res) => {
-    const reviewsCurr = {
+//Find Review middleware
+async function findReview(req,res,next){
+    const review = await Review.findByPk(req.param.reviewId);
+        if(review){
+            req.review = review;
+            return next()
+        }else{
+            res.status(404).json({
+                "message": "Review couldn't be found",
+                "statusCode": 404
+            })
+        }
+    }
+
+
+
+
+//* Get all Reviews of the Current User
+router.get('/current', requireAuth,  async (req, res) => {
+    const reviews = {
         include: [
             {
                 model: User,
@@ -31,18 +48,43 @@ router.get('/current', requireAuth, async (req, res) => {
         ],
         where: { userId: req.user.id }
     };
-    const reviews = await Review.findAll(reviewsCurr);
-    for (let i = 0; i < reviews.length; i++) {
-        const review = reviews[i].toJSON();
-        if (review.Spot) {
-            reviews[i] = review;
+    const fomattedReviews = reviews.map((review)=>{
+        if (review.Spot && review.Spot.SpotImage) {
             review.Spot.previewImage = review.Spot.SpotImages[0].url;
-            delete review.Spot.SpotImages;
-            delete review.Spot.description;
         }
-    }
-    res.json({ Reviews: reviews });
+        return {
+            id: review.id,
+            userId: review.userId,
+            spotId: review.spotId,
+            reviewText: review.review,
+            stars: review.stars,
+            createdAt: review.createdAt,
+            updatedAt: review.updatedAt,
+            User: { ...review.User },
+            Spot: { ...review.Spot },
+            ReviewImages: review.ReviewImages.map((image) => ({ ...image })),
+        }
+    })
+
+    res.json({ fomattedReviews });
 });
 
+
+// * Get all Reviews by a Spot's id
+
+// * Get all Reviews by a Spot's id
+
+
+// * Create a Review for a Spot based on the Spot's id
+// * Create a Review for a Spot based on the Spot's id
+
+// * Add an Image to a Review based on the Review's id
+// * Add an Image to a Review based on the Review's id
+
+// * Edit a Review
+// * Edit a Review
+
+// * Delete a Review
+// * Delete a Review
 
 module.exports = router;
