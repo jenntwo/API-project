@@ -285,11 +285,43 @@ router.post('/:spotId/images',requireAuth, isSpotOwner, async(req,res)=>{
 
 
 
-// // edit a spot
-// router.put('/:spotId', validateSpot, isSpotOwner, (req, res) => {
-//     //update info
-//     res.status(200).json(spot);
-//   });
+//* Edit a spot
+router.put(
+    '/:spotId',
+    requireAuth,
+    isSpotOwner,
+    validateSpot,
+    async(req, res) => {
+        const {
+            address,
+            city,
+            state,
+            country,
+            lat,
+            lng,
+            name,
+            description,
+            price
+            } = req.body;
+
+        const spot = req.spot;
+
+        // If couldn't find a Spot with id
+        if (!spot){
+            return res.status(404).json({ message: "Spot couldn't be found" });
+        }
+        // Validate the request body
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+        }
+        //update spot
+        const editedSpot = await req.spot.update({...req.body})
+        res.status(200).json(editedSpot);
+  });
+//* Edit a spot
+
+
 
 // // delete a spot
 // router.delete('/:spotId', isSpotOwner, (req, res) => {
