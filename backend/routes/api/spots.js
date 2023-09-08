@@ -330,6 +330,50 @@ router.delete('/:spotId', requireAuth,isSpotOwner,successfulDeleteRes, async(req
     await req.spot.destroy();
     successfulDeleteRes(res);
   });
+//* Delete a spot
 
+
+
+// * Get all Reviews by a Spot's id
+router.get('/:spotId/reviews', isSpotOwner, async (req, res) => {
+    const op = {
+        include: [
+            {
+                model: User,
+                attributes: ['id', 'firstName', 'lastName']
+            },
+            {
+                model: ReviewImage,
+                attributes: ['id', 'url']
+            },
+        ],
+        where: { spotId: req.params.spotId }
+    };
+
+    const reviews = await Review.findAll(op);
+    const formatedReviews = reviews.map((review) => {
+        const reviewJson = review.toJSON();
+        if (reviewJson.Spot) {
+            reviewData.Spot.previewImage = reviewData.Spot.SpotImages[0].url;
+        }
+        return {
+                id: reviewJson.id,
+                userId: reviewJson.userId,
+                spotId: reviewJson.spotId,
+                review: reviewJson.review,
+                stars: reviewJson.stars,
+                createdAt: reviewJson.createdAt,
+                updatedAt: reviewJson.updatedAt,
+                User: {
+                    id: reviewJson.User.id,
+                    firstName: reviewJson.User.firstName,
+                    lastName: reviewJson.User.lastName
+                },
+                ReviewImages: reviewJson.ReviewImages
+        };
+    })
+    res.json({ Reviews: formatedReviews });
+});
+// * Get all Reviews by a Spot's id
 
 module.exports = router;

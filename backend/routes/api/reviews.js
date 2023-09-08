@@ -3,6 +3,17 @@ const { requireAuth,requireProperAut,successfulDeleteRes } = require('../../util
 const { Spot, Review, SpotImage, User, sequelize, ReviewImage, Booking } = require('../../db/models');
 const { validationResult } = require('express-validator');
 const router = express.Router();
+const { check, query } = require('express-validator');
+//Review Validation Check
+
+const validateReview = [
+    check('review')
+        .exists({ checkFalsy: true })
+        .withMessage('Review text is required'),
+    check('stars')
+        .isIn([1, 2, 3, 4, 5])
+        .withMessage('Stars must be an integer from 1 to 5')
+];
 
 
 //Find Review middleware
@@ -24,7 +35,7 @@ async function findReview(req,res,next){
 
 //* Get all Reviews of the Current User
 router.get('/current', requireAuth,  async (req, res) => {
-    const reviews = {
+    const reviews = await Review.findAll({
         include: [
             {
                 model: User,
@@ -47,8 +58,9 @@ router.get('/current', requireAuth,  async (req, res) => {
             },
         ],
         where: { userId: req.user.id }
-    };
-    const fomattedReviews = reviews.map((review)=>{
+    });
+
+    const fomattedReviews = reviews.map((review,i)=>{
         if (review.Spot && review.Spot.SpotImage) {
             review.Spot.previewImage = review.Spot.SpotImages[0].url;
         }
@@ -60,13 +72,13 @@ router.get('/current', requireAuth,  async (req, res) => {
             stars: review.stars,
             createdAt: review.createdAt,
             updatedAt: review.updatedAt,
-            User: { ...review.User },
-            Spot: { ...review.Spot },
+        User: review.User ? { ...review.User.dataValues}:null,
+            Spot: review.Spot ? { ...review.Spot.dataValues }:null,
             ReviewImages: review.ReviewImages.map((image) => ({ ...image })),
         }
     })
 
-    res.json({ fomattedReviews });
+    res.json({ Reviews:fomattedReviews });
 });
 
 
