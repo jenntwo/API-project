@@ -2,8 +2,7 @@ const express = require('express');
 const { Op } = require('sequelize');
 const { check, query } = require('express-validator');
 const { requireAuth,requireProperAuth,successfulDeleteRes } = require('../../utils/auth');
-const { validationResult } = require('express-validator');
-
+const { handleValidationErrors } = require('../../utils/validation');
 const { Spot, Review, SpotImage, User, sequelize, ReviewImage, Booking } = require('../../db/models');
 
 
@@ -39,7 +38,9 @@ const router = express.Router();
             .withMessage('Description is required'),
         check('price')
             .exists({ checkFalsy: true })
-            .withMessage('Price is required')
+            .withMessage('Price is required'),
+            handleValidationErrors
+
     ];
 
 //Review Validation Check
@@ -49,7 +50,8 @@ const validateReview = [
         .withMessage('Review text is required'),
     check('stars')
         .isIn([1, 2, 3, 4, 5])
-        .withMessage('Stars must be an integer from 1 to 5')
+        .withMessage('Stars must be an integer from 1 to 5'),
+        handleValidationErrors
 ];
 
 
@@ -252,11 +254,6 @@ router.post('/', requireAuth, validateSpot, async(req,res)=>{
     } = req.body;
 
     // Validate the request body
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
 
      const newSpot = await Spot.create({
         ownerId: req.user.id,

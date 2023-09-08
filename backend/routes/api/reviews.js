@@ -1,10 +1,20 @@
 const express = require('express');
 const { requireAuth,requireProperAuth,successfulDeleteRes } = require('../../utils/auth');
 const { Spot, Review, SpotImage, User, sequelize, ReviewImage, Booking } = require('../../db/models');
-const { validationResult } = require('express-validator');
 const router = express.Router();
 const { check, query } = require('express-validator');
+const { handleValidationErrors } = require('../../utils/validation');
 
+//Review Validation Check
+const validateReview = [
+    check('review')
+        .exists({ checkFalsy: true })
+        .withMessage('Review text is required'),
+    check('stars')
+        .isIn([1, 2, 3, 4, 5])
+        .withMessage('Stars must be an integer from 1 to 5'),
+        handleValidationErrors
+];
 
 
 //Find Review middleware
@@ -107,7 +117,19 @@ router.post('/:reviewId/images', requireAuth, reviewAuth, async (req, res) => {
 
 
 // * Edit a Review
+router.put('/:reviewId', requireAuth, reviewAuth, validateReview, async (req, res) => {
+    //check validation of review
+
+    const { review, stars } = req.body;
+    const updates = {};
+    if (review !== undefined) updates.review = review;
+    if (stars !== undefined) updates.stars = stars;
+    const newReviewRecord = await req.review.update(updates);
+    res.status(200).json(newReviewRecord);
+});
 // * Edit a Review
+
+
 
 // * Delete a Review
 // * Delete a Review
