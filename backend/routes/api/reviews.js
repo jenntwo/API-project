@@ -132,6 +132,10 @@ router.put('/:reviewId', requireAuth, reviewAuth, validateReview, async (req, re
 
 
 // * Delete a Review
+router.delete('/:reviewId', requireAuth, reviewAuth, async (req, res) => {
+    await req.review.destroy();
+    successfulDeleteRes(res)
+});
 // * Delete a Review
 
 module.exports = router;
