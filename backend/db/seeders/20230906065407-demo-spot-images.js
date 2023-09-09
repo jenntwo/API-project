@@ -14,7 +14,7 @@ module.exports = {
       {
         spotId:1,
         url:'spot-1-image-1.webp',
-        preview:false
+        preview:true
       },
       {
         spotId: 1,
