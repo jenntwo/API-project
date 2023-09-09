@@ -404,4 +404,55 @@ router.post('/:spotId/reviews', requireAuth, isSpotOwner, validateReview, async 
 // * Create a Review for a Spot based on the Spot's id
 
 
+
+// * Get all Bookings for a Spot based on the Spot's id
+router.get('/:spotId/bookings', requireAuth, async (req, res) => {
+    const spot = await Spot.findByPk(req.params.spotId);
+    // console.log(spot);
+    if (req.user.id === spot.ownerId) {
+        const options = {
+            where: { spotId: req.params.spotId },
+            include: {
+                model: Spot,
+                include: {
+                    model: User,
+                    attributes: ['id', 'firstName', 'lastName']
+                }
+            }
+        };
+        const bookings = await Booking.findAll(options);
+        // console.log(bookings);
+        const formattedBookings = bookings.map((booking)=>{
+            const bookingJson = booking.toJSON();
+            // console.log(bookingJson);
+            if (bookingJson.Spot) {
+                // console.log(bookingJson.Spot.User);
+                bookingJson.User = bookingJson.Spot.User;
+                // console.log(bookingJson.User);
+                delete bookingJson.Spot
+            }
+            return {
+                User:bookingJson.User,
+                ...bookingJson
+            }
+        })
+            res.json({ Bookings: formattedBookings });
+
+        } else {
+        const op = {
+            where: { spotId: req.params.spotId },
+            attributes: ['spotId', 'startDate', 'endDate']
+        };
+        const bookings = await Booking.findAll(op);
+        const formattedBookings = bookings.map((booking)=>{
+            const bookingJson = booking.toJSON();
+            if(bookingJson.Spot){
+                bookingJson.User = bookingJson.Spot.User;
+            }
+        })
+        res.json({ Bookings: formattedBookings});
+        }
+    });
+// * Get all Bookings for a Spot based on the Spot's id
+
 module.exports = router;
