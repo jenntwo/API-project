@@ -102,7 +102,8 @@ const validateBooking = [
                 }
             }
             return startDate;
-        })
+        }),
+        handleValidationErrors
 
 
 ];
@@ -371,10 +372,10 @@ router.put(
             return res.status(404).json({ message: "Spot couldn't be found" });
         }
         // Validate the request body
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-        }
+        // const errors = validationResult(req);
+        // if (!errors.isEmpty()) {
+        // return res.status(400).json({ errors: errors.array() });
+        // }
         //update spot
         const editedSpot = await req.spot.update({...req.body})
         res.status(200).json(editedSpot);
