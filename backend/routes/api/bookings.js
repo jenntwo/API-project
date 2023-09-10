@@ -62,7 +62,7 @@ const validateBooking = [
             return startDate;
         }),
          // Additional custom check for date overlap
-    check().custom(async (value, { req }) => {
+    check('Date Range').custom(async (value, { req }) => {
         const options = { where: {} };
         if (req.booking) {
             options.where.id = { [Op.not]: req.booking.id };

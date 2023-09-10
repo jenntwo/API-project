@@ -58,10 +58,15 @@ const validateReview = [
 const validateBooking = [
     check('endDate')
         .custom((endDate, { req }) => {
+            // console.log('req.body.startDate:', req.body.startDate);
+            // console.log('endDate:', endDate);
+            // console.log('req.body.startDate:', new Date(req.body.startDate));
+            // console.log('endDate:', new Date(endDate));
+            // console.log(new Date(endDate) <= new Date(req.body.startDate));
             if (new Date(endDate) <= new Date(req.body.startDate)) {
                 throw new Error('endDate cannot be on or before startDate');
             } else {
-                return endDate;
+                return true;
             }
         })
         ////
@@ -81,7 +86,7 @@ const validateBooking = [
                     throw new Error("End date conflicts with an existing booking");
                 }
             }
-            return endDate;
+            return true;
         }),
 
     check('startDate')
@@ -101,12 +106,39 @@ const validateBooking = [
                     throw new Error("Start date conflicts with an existing booking");
                 }
             }
-            return startDate;
+            return true;
         }),
+         // Additional custom check for date overlap
+    check('Date Range').custom(async (value, { req }) => {
+        const options = { where: {} };
+        if (req.booking) {
+            options.where.id = { [Op.not]: req.booking.id };
+            options.spotId = req.booking.spotId;
+        } else {
+            options.spotId = req.params.spotId;
+        }
+        const bookings = await Booking.findAll(options);
+        const newStartDate = new Date(req.body.startDate);
+        const newEndDate = new Date(req.body.endDate);
+
+        for (const booking of bookings) {
+            const existingStartDate = new Date(booking.startDate);
+            const existingEndDate = new Date(booking.endDate);
+
+            if (
+                newStartDate <= existingStartDate && newEndDate >= existingEndDate
+            ) {
+                req.message = "Sorry, this spot is already booked for the specified dates";
+                req.status = 403;
+                throw new Error("Date range conflicts with an existing booking");
+            }
+        }
+
+        return true;
+    }),
         handleValidationErrors
-
-
 ];
+
 
 //middleware for getting new json Spot info
 async function getSpots(req,res){
@@ -194,6 +226,23 @@ async function isSpotOwner(req, res, next){
         requireProperAuth(res);
     }
 }
+
+////Middleware for check proper authorization to create bookings
+async function CreateBookingsAuth(req, res, next){
+    const spot = await Spot.findByPk(req.params.spotId);
+
+    //Couldn't find a Spot with the id
+    if (!spot) {
+        return res.status(404).json({
+            "message": "Spot couldn't be found",
+            "statusCode": 404
+        })
+    }
+
+    req.spot = spot;
+    return next();
+}
+
 
 
 // const validateSpotQuery = [
@@ -543,13 +592,16 @@ router.get('/:spotId/bookings', requireAuth, async (req, res) => {
 // }
 
 
-router.post('/:spotId/bookings', requireAuth, isSpotOwner, validateBooking, async (req, res) => {
+router.post('/:spotId/bookings', requireAuth, CreateBookingsAuth,validateBooking, async (req, res) => {
+    // console.log('1');
+    // console.log(res.spot.ownerId);
+    ///
     if (req.user.id === req.spot.ownerId) {
         // console.log("1")
         requireProperAuth(res);
      }else{
         const { startDate, endDate } = req.body;
-        console.log("1")
+        // console.log("1")
         ///
 //         const conflicts = await checkBookigConflict(req.params.spotId, startDate, endDate)
 //         if(conflicts){
