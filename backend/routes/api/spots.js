@@ -104,7 +104,7 @@ const validateBooking = [
             return startDate;
         })
 
-        
+
 ];
 
 //middleware for getting new json Spot info
@@ -384,13 +384,12 @@ router.put(
 
 
 //* Delete a spot
-router.delete('/:spotId', requireAuth,isSpotOwner,successfulDeleteRes, async(req, res) => {
+router.delete('/:spotId', requireAuth,isSpotOwner, async(req, res) => {
     const spot = req.spot;
     await req.spot.destroy();
     successfulDeleteRes(res);
   });
 //* Delete a spot
-
 
 
 // * Get all Reviews by a Spot's id
