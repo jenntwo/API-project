@@ -12,9 +12,21 @@ const handleValidationErrors = (req, _res, next) => {
       .forEach(error => errors[error.path] = error.msg);
 
     const errorMessage = req.message
-    const err = Error(errorMessage);
+    if(errorMessage){
+    err = Error(errorMessage);}
+    else{
+      err = Error('Bad Request')
+    }
+
+    const errorStatus = req.status
+    if(errorStatus){
+    err.status = errorStatus;}
+    else{
+      err.status = 400;
+    }
+
+
     err.errors = errors;
-    err.status = 400;
     err.title = "Bad request.";
     delete err.stack;
     next(err);

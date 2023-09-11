@@ -20,7 +20,8 @@ const validateLogin = [
     check('password')
       .exists({ checkFalsy: true })
       .notEmpty()
-      .withMessage("Password is required")
+      .withMessage("Password is required"),
+      handleValidationErrors
 ];
 
 
@@ -91,7 +92,7 @@ router.delete(
 
 // Restore session user
 router.get(
-    '/',requireAuth,
+    '/',
     (req, res) => {
       const { user } = req;
       if (user) {

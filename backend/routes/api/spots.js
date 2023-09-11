@@ -1,5 +1,5 @@
 const express = require('express');
-const { Op } = require('sequelize');
+const { Op, where } = require('sequelize');
 const { check, query } = require('express-validator');
 const { requireAuth,requireProperAuth,successfulDeleteRes } = require('../../utils/auth');
 const { handleValidationErrors } = require('../../utils/validation');
@@ -139,31 +139,98 @@ const validateBooking = [
         handleValidationErrors
 ];
 
+// validate Query
+const validateSpotQuery = [
+    query('page')
+        .optional()
+        .isInt({ min: 1 })
+        .withMessage("Page must be greater than or equal to 1")
+        .isInt({ max: 10 })
+        .withMessage("Page must be less than or equal to 10"),
+    query('size')
+        .optional()
+        .isInt({ min: 1 })
+        .withMessage("Size must be greater than or equal to 1")
+        .isInt({ max: 10 })
+        .withMessage("Size must be less than or equal to 20"),
+    query('minLat')
+        .optional()
+        .isFloat()
+        .withMessage("Minimum latitude is invalid"),
+    query('maxLat')
+        .optional()
+        .isFloat()
+        .withMessage("Maximum latitude is invalid"),
+    query('minLng')
+        .optional()
+        .isFloat()
+        .withMessage("Minimum longitude is invalid"),
+    query('maxLng')
+        .optional()
+        .isFloat()
+        .withMessage("Maximum longitude is invalid"),
+    query('minPrice')
+        .optional()
+        .isFloat({ min: 0 })
+        .withMessage("Minimum price must be greater than or equal to 0"),
+    query('maxPrice')
+        .optional()
+        .isFloat({ min: 0 })
+        .withMessage("Maximum price must be greater than or equal to 0"),
+        handleValidationErrors
+];
 
 //middleware for getting new json Spot info
 async function getSpots(req,res){
-//     //pagination
-//     // const options = {
-//     //     limit: size ? parseInt(size) : 10,
-//     //     offset: page ? (parseInt(page) - 1) * size : 0,
-//     // };
-    const { page = 1, size = 10 } = req.query;
-    const offset = (page - 1) * size;
+    let {
+        page,
+        size,
+        minLat,
+        maxLat,
+        minLng,
+        maxLng,
+        minPrice,
+        maxPrice
+    } = req.query;
 
-    const spots = await Spot.findAll({
-        limit:parseInt(size),
-        offset,
-        include:[
-            {
-                model:Review,
-                attributes:['stars']
-            },
-            {
-                model:SpotImage,
-                attributes:['url']
-            }
-        ]
-        });
+
+        page = page ? +page : 1;
+        size = size ? +size : 20;
+        req.query.page = page;
+        req.query.size = size;
+
+    const options =
+        {
+            limit:parseInt(size),
+            offset:(page - 1) * size,
+            include:[
+                {
+                    model:Review,
+                    attributes:['stars']
+                },
+                {
+                    model:SpotImage,
+                    attributes:['url']
+                }
+            ],
+            where:{}
+    }
+
+
+        if (minLat && maxLat) options.where.lat = { [Op.between]: [minLat, maxLat] };
+        else if (minLat) options.where.lat = { [Op.gte]: minLat };
+        else if (maxLat) options.where.lat = { [Op.lte]: maxLat };
+
+        if (minLng && maxLng) options.where.lng = { [Op.between]: [+minLng, +maxLng] };
+        else if (minLng) options.where.lng = { [Op.gte]: +minLng };
+        else if (maxLng) options.where.lng = { [Op.lte]: +maxLng };
+
+        if (minPrice && maxPrice) options.where.price = { [Op.between]: [+minPrice, +maxPrice] };
+        else if (minPrice) options.where.price = { [Op.gte]: +minPrice };
+        else if (maxPrice) options.where.price = { [Op.lte]: +maxPrice };
+
+
+    const spots = await Spot.findAll(options);
 
          const formattedSpots = spots.map((spot,i )=>{
             const spotJson = spot.toJSON();
@@ -259,7 +326,7 @@ async function CreateBookingsAuth(req, res, next){
 
 
 //* Get all Spots
-router.get('/', async (req, res) => {
+router.get('/', validateSpotQuery, async (req, res) => {
     res.json({Spots:await getSpots(req, res)});
 });
 //* Get all Spots
