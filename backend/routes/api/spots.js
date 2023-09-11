@@ -327,19 +327,31 @@ async function CreateBookingsAuth(req, res, next){
 
 //* Get all Spots
 router.get('/', validateSpotQuery, async (req, res) => {
-    res.json({Spots:await getSpots(req, res)});
-});
+    try {
+        const spots = await getSpots(req, res);
+        res.json({ Spots: spots });
+      } catch (error) {
+        console.error('An error occurred:', error);
+        res.status(500).json({ error: 'An error occurred while processing get all spots' });
+      }
+    });
 //* Get all Spots
 
 
 
 
 //* Get Spots owned by the Current User
-router.get('/current',requireAuth, async(req,res)=>{
-    const allSpotArr = await getSpots(req,res)
-    const userSpotsArr = allSpotArr.filter(spot => spot.ownerId === req.user.id)
-    res.json({ Spots: userSpotsArr });
-});
+router.get('/current', requireAuth, async (req, res) => {
+    try {
+      const allSpotArr = await getSpots(req, res);
+      const userSpotsArr = allSpotArr.filter((spot) => spot.ownerId === req.user.id);
+      res.json({ Spots: userSpotsArr });
+    } catch (error) {
+      // Handle the error here, e.g., send an error response to the client
+      console.error('An error occurred:', error);
+      res.status(500).json({ error: 'An error occurred while processing the get spots by the current user' });
+    }
+  });
 //* Get Spots owned by the Current User
 
 
@@ -409,8 +421,9 @@ router.get('/:spotId',async(req,res)=>{
 
 
 //*Create a Spot
-router.post('/', requireAuth, validateSpot, async(req,res)=>{
-    const {
+router.post('/', requireAuth, validateSpot, async (req, res) => {
+    try {
+      const {
         address,
         city,
         state,
@@ -420,44 +433,54 @@ router.post('/', requireAuth, validateSpot, async(req,res)=>{
         name,
         description,
         price
-    } = req.body;
+      } = req.body;
 
-    // Validate the request body
-
-     const newSpot = await Spot.create({
+      // Create a new Spot
+      const newSpot = await Spot.create({
         ownerId: req.user.id,
         ...req.body
-     });
-      res.status(201).json(newSpot)
-});
+      });
+
+      res.status(201).json(newSpot);
+    } catch (error) {
+      console.error('An error occurred while creating a spot:', error);
+      res.status(500).json({ error: 'An error occurred while creating a spot' });
+    }
+  });
 //* Create a Spot
 
 
 
 
 //* Add an Image to a Spot based on the Spot's id
-router.post('/:spotId/images',requireAuth, isSpotOwner, async(req,res)=>{
-    const { url, preview } = req.body;
-    const spot = req.spot;
+router.post('/:spotId/images', requireAuth, isSpotOwner, async (req, res) => {
+    try {
+      const { url, preview } = req.body;
+      const spot = req.spot;
 
-    // If couldn't find a Spot with id
-    if (!spot){
+      // If couldn't find a Spot with id
+      if (!spot) {
         return res.status(404).json({ message: "Spot couldn't be found" });
-    }
+      }
 
-    const newImage = await SpotImage.create({
-        spotId:spot.id,
+      const newImage = await SpotImage.create({
+        spotId: spot.id,
         url,
         preview
-    });
+      });
 
-    const newImageRes = {
+      const newImageRes = {
         id: newImage.id,
-        url:newImage.url,
-        preview:newImage.preview
+        url: newImage.url,
+        preview: newImage.preview
       };
-    res.status(200).json(newImageRes);
-});
+      res.status(200).json(newImageRes);
+    } catch (error) {
+      // Handle the error here
+      console.error('An error occurred while adding an image to a spot:', error);
+      res.status(500).json({ error: "An error occurred while adding an image to a spot" });
+    }
+  });
 //* Add an Image to a Spot based on the Spot's id
 
 
@@ -469,7 +492,7 @@ router.put(
     isSpotOwner,
     validateSpot,
     async(req, res) => {
-        const {
+        try{const {
             address,
             city,
             state,
@@ -495,23 +518,33 @@ router.put(
         //update spot
         const editedSpot = await req.spot.update({...req.body})
         res.status(200).json(editedSpot);
-  });
+  }catch(error){
+    console.error('An error occurred while editing a spot:', error);
+    res.status(500).json({ error: "An error occurred while editing a spot" });
+}
+});
 //* Edit a spot
 
 
 
 //* Delete a spot
 router.delete('/:spotId', requireAuth,isSpotOwner, async(req, res) => {
+    try{
     const spot = req.spot;
     await req.spot.destroy();
     successfulDeleteRes(res);
+    }catch (error) {
+        console.error('An error occurred while deleting a spot:', error);
+        res.status(500).json({ error: "An error occurred while deleting a spot" });
+      }
   });
 //* Delete a spot
 
 
 // * Get all Reviews by a Spot's id
 router.get('/:spotId/reviews', isSpotOwner, async (req, res) => {
-    const op = {
+    try{
+        const op = {
         include: [
             {
                 model: User,
@@ -548,12 +581,17 @@ router.get('/:spotId/reviews', isSpotOwner, async (req, res) => {
         };
     })
     res.json({ Reviews: formatedReviews });
+}catch (error) {
+    console.error('An error occurred while getting reviews for a spot:', error);
+    res.status(500).json({ error: "An error occurred while getting reviews for a spot" });
+  }
 });
 // * Get all Reviews by a Spot's id
 
 
 // * Create a Review for a Spot based on the Spot's id
 router.post('/:spotId/reviews', requireAuth, isSpotOwner, validateReview, async (req, res) => {
+    try{
     const IsReviewed = await Review.findOne({ where: { userId: req.user.id, spotId: req.params.spotId } });
     if (IsReviewed) {
         return res.status(500).json({
@@ -568,6 +606,10 @@ router.post('/:spotId/reviews', requireAuth, isSpotOwner, validateReview, async 
             review,
             stars });
         res.status(201).json(record);
+    }catch (error) {
+        console.error('An error occurred while creating a review for a spot:', error);
+        res.status(500).json({ error: "An error occurred while creating a review for a spot" });
+      }
     })
 // * Create a Review for a Spot based on the Spot's id
 
@@ -575,6 +617,7 @@ router.post('/:spotId/reviews', requireAuth, isSpotOwner, validateReview, async 
 
 // * Get all Bookings for a Spot based on the Spot's id
 router.get('/:spotId/bookings', requireAuth, async (req, res) => {
+    try{
     const spot = await Spot.findByPk(req.params.spotId);
     if (!spot) {
         return res.status(404).json({
@@ -631,7 +674,11 @@ router.get('/:spotId/bookings', requireAuth, async (req, res) => {
         })
         res.json({ Bookings: formattedBookings});
         }
-    }
+    }}catch (error) {
+
+        console.error('An error occurred while getting bookings for a spot:', error);
+        res.status(500).json({ error: "An error occurred while getting bookings for a spot" });
+      }
     });
 // * Get all Bookings for a Spot based on the Spot's id
 
@@ -663,7 +710,8 @@ router.post('/:spotId/bookings', requireAuth, CreateBookingsAuth,validateBooking
     // console.log('1');
     // console.log(res.spot.ownerId);
     ///
-    if (req.user.id === req.spot.ownerId) {
+    try{
+        if (req.user.id === req.spot.ownerId) {
         // console.log("1")
         requireProperAuth(res);
      }else{
@@ -688,6 +736,10 @@ router.post('/:spotId/bookings', requireAuth, CreateBookingsAuth,validateBooking
         });
         res.status(200).json(newBooking);
     }
+}catch (error) {
+    console.error('An error occurred while creating a booking for a spot:', error);
+    res.status(500).json({ error: "An error occurred while creating a booking for a spot" });
+  }
 });
 
 
