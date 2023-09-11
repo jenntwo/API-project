@@ -49,7 +49,7 @@ router.get('/current', requireAuth,  async (req, res) => {
             {
                 model: Spot,
                 attributes: {
-                    exclude: ['createdAt', 'updatedAt']
+                    exclude: ['createdAt', 'updatedAt','description']
                 },
                 include: {
                     model: SpotImage,
@@ -66,20 +66,26 @@ router.get('/current', requireAuth,  async (req, res) => {
     });
 
     const fomattedReviews = reviews.map((review,i)=>{
-        if (review.Spot && review.Spot.SpotImage) {
-            review.Spot.previewImage = review.Spot.SpotImages[0].url;
+        // console.log(review.Spot);
+        //  console.log(review.Spot.SpotImages);
+        const reviewJson = review.toJSON();
+        if (reviewJson.Spot) {
+            reviewJson.Spot.previewImage = reviewJson.Spot.SpotImages[0].url;
+            delete reviewJson.Spot.SpotImages;
+            delete reviewJson.Spot.description;
         }
+
         return {
-            id: review.id,
-            userId: review.userId,
-            spotId: review.spotId,
-            reviewText: review.review,
-            stars: review.stars,
-            createdAt: review.createdAt,
-            updatedAt: review.updatedAt,
-        User: review.User ? { ...review.User.dataValues}:null,
-            Spot: review.Spot ? { ...review.Spot.dataValues }:null,
-            ReviewImages: review.ReviewImages.map((image) => ({ ...image })),
+            id: reviewJson.id,
+            userId: reviewJson.userId,
+            spotId: reviewJson.spotId,
+            review: reviewJson.review,
+            stars: reviewJson.stars,
+            createdAt: reviewJson.createdAt,
+            updatedAt: reviewJson.updatedAt,
+            User: reviewJson.User,
+            Spot: reviewJson.Spot,
+            ReviewImages: reviewJson.ReviewImages,
         }
     })
 
