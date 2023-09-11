@@ -15,7 +15,7 @@ const validateSignup = [
         const user = await User.findOne({ where: { email } });
         if (user) {
           req.message =  "User already exists"
-          req.status = 403;
+          req.status = 500;
           throw new Error('User with that email already exists');
       } else {
           return email;
@@ -28,7 +28,7 @@ const validateSignup = [
       .custom(async (username, { req }) => {
         const user = await User.findOne({ where: { username } });
         if (user) {
-          req.status = 403;
+          req.status = 500;
           req.message =  "User already exists"
           throw new Error('User with that username already exists');
       } else {
@@ -50,18 +50,22 @@ const validateSignup = [
       // is given when body validations for the
       // email, firstName, or lastName are violated
     check('email')
-    .exists({ checkFalsy: true })
-    .isEmail()
-    .withMessage('Please provide a valid email address.'),
-  check('firstName')
-    .exists({ checkFalsy: true })
-    .isString()
-    .withMessage('First name must be a string.'),
-  check('lastName')
-    .exists({ checkFalsy: true })
-    .isString()
-    .withMessage('Last name must be a string.'),
-    handleValidationErrors
+      .exists({ checkFalsy: true })
+      .isEmail()
+      .withMessage('Please provide a valid email address.'),
+    check('firstName')
+      .exists({ checkFalsy: true })
+      .withMessage("First Name is required")
+      .not()
+      .isEmail()
+      .withMessage('First name cannot be an email.'),
+    check('lastName')
+      .exists({ checkFalsy: true })
+      .withMessage("Last Name is required")
+      .not()
+      .isEmail()
+      .withMessage('Last name cannot be an email.'),
+      handleValidationErrors
   ];
 
 
